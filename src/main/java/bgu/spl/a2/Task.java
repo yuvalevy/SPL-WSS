@@ -16,6 +16,13 @@ import java.util.Collection;
  */
 public abstract class Task<R> {
 
+	private boolean isStarted = false;
+	private int count = 0;
+
+	private Processor handler;
+	private Deferred<R> defrred = new Deferred<R>();
+	private Runnable resolvedCallback;
+
 	/**
 	 *
 	 * start/continue handling the task
@@ -32,9 +39,16 @@ public abstract class Task<R> {
 	 * @param handler
 	 *            the handler that wants to handle the task
 	 */
-	/* package */ final void handle(Processor handler) {
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+	final void handle(Processor handler) {
+
+		this.handler = handler;
+
+		if (!this.isStarted) {
+			this.isStarted = true;
+			start();
+		} else {
+			// TODO what else?
+		}
 	}
 
 	/**
@@ -45,8 +59,10 @@ public abstract class Task<R> {
 	 *            - the task calculated result
 	 */
 	protected final void complete(R result) {
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+
+		// TODO if null?
+
+		this.defrred.resolve(result);
 	}
 
 	/**
@@ -57,12 +73,15 @@ public abstract class Task<R> {
 	 *            the task to execute
 	 */
 	protected final void spawn(Task<?>... task) {
-		// this.count+=task.length;
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+
+		// using += to allow the call of spawn several times at start()
+		this.count += task.length;
+
+		// TODO add this method to Processor
+		// this.handler.addTasks(task);
+
 	}
 
-	// int count = 0;
 	/**
 	 * start handling the task - note that this method is protected, a handler
 	 * cannot call it directly but instead must use the
@@ -82,33 +101,60 @@ public abstract class Task<R> {
 	 *            the callback to execute once all the results are resolved
 	 */
 	protected final void whenResolved(Collection<? extends Task<?>> tasks, Runnable callback) {
-		// subscibe to task[i].deffered.whenResolved(()->{ notity1() })
-		// wait();
-		new Thread(() -> {
-			// this.wait();
 
-			callback.run();
-			// proccesor.addMyself();
+		this.resolvedCallback = callback;
+
+		for (Task<?> task : tasks) {
+			task.getResult().whenResolved(() -> {
+				this.notifyOnce();
+			});
+		}
+
+		new Thread(() -> {
+
+			// TODO IDK if this should be exactly like this. For now, in order
+			// to compile, it is here. :|
+			synchronized (this) {
+
+				try {
+					this.wait();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+			}
+			// TODO should it be here
+			this.resolvedCallback.run();
+
+			// TODO return myself to queue?
+			// this.handler.addTasks(this);
 
 		});
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+
+		// TODO the fuck i do with this thread??
+
 	}
 
 	/**
 	 * @return this task deferred result
 	 */
 	public final Deferred<R> getResult() {
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+
+		return this.defrred;
 	}
 
-	// public void notify1(){
-	//
-	// count--;
-	// if (count == 0) {
-	// this.notify();
-	// }
-	//
-	// }
+	/**
+	 * Increases the results counter by one. When counter is 0, it means that
+	 * all sub-tasks finished and it is time to notify() and resume whenResolved
+	 * for this task
+	 */
+	private void notifyOnce() {
+
+		// synchronized (_lockCount)
+		// DO NOT lock 'this' here. wait() locked this!
+		this.count--;
+		if (this.count == 0) {
+			notify();
+		}
+	}
 }

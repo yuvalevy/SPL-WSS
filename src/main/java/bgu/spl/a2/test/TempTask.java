@@ -28,10 +28,6 @@ public class TempTask {
 		t.test();
 	}
 
-	public void notify1() {
-		System.out.println(this.cur);
-	}
-
 	public void subscribe(Runnable callback) {
 
 		this.df.subscibe(callback);
@@ -45,6 +41,10 @@ public class TempTask {
 		test.subscribe(() -> {
 			notify1();
 		});
+	}
+
+	private void notify1() {
+		System.out.println(this.cur);
 	}
 
 }

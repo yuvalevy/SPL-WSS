@@ -1,5 +1,7 @@
 package bgu.spl.a2;
 
+import java.util.Stack;
+
 /**
  * this class represents a deferred result i.e., an object that eventually will
  * be resolved to hold a result of some operation, the class allows for getting
@@ -17,6 +19,16 @@ package bgu.spl.a2;
  */
 public class Deferred<T> {
 
+	T result;
+	private boolean isResolved;
+	Stack<Runnable> callbacks;
+
+	Deferred() {
+		this.isResolved = false;
+		this.result = null;
+		this.callbacks = new Stack<Runnable>();
+	}
+
 	/**
 	 *
 	 * @return the resolved value if such exists (i.e., if this object has been
@@ -26,8 +38,12 @@ public class Deferred<T> {
 	 *             not yet resolved
 	 */
 	public T get() {
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+
+		if (this.isResolved) {
+			return this.result;
+		}
+
+		throw new IllegalStateException("Object was not yet resolved");
 	}
 
 	/**
@@ -37,8 +53,7 @@ public class Deferred<T> {
 	 *         before.
 	 */
 	public boolean isResolved() {
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+		return this.isResolved;
 	}
 
 	/**
@@ -55,9 +70,16 @@ public class Deferred<T> {
 	 *             in the case where this object is already resolved
 	 */
 	public void resolve(T value) {
-		// TODO: replace method body with real implementation
-		// callBack[i].run()
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+
+		// TODO sync result implementation with isResolved() and get()
+		this.result = value;
+		this.isResolved = true;
+
+		while (!this.callbacks.isEmpty()) {
+			Runnable runnable = this.callbacks.pop();
+			runnable.run();
+		}
+
 	}
 
 	/**
@@ -74,9 +96,17 @@ public class Deferred<T> {
 	 *            the callback to be called when the deferred object is resolved
 	 */
 	public void whenResolved(Runnable callback) {
-		// this.allbacks.add(callback)
-		// TODO: replace method body with real implementation
-		throw new UnsupportedOperationException("Not Implemented Yet.");
+
+		if (callback != null) {
+
+			// TODO sync here to avoid resolving the object before adding this
+			// callback
+			if (this.isResolved) {
+				callback.run();
+			} else {
+				this.callbacks.add(callback);
+			}
+		}
 	}
 
 }
