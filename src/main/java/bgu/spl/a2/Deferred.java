@@ -12,65 +12,71 @@ package bgu.spl.a2;
  * private, protected or package protected - in other words, no new public
  * methods
  *
- * @param <T> the result type
+ * @param <T>
+ *            the result type
  */
 public class Deferred<T> {
 
-    /**
-     *
-     * @return the resolved value if such exists (i.e., if this object has been
-     * {@link #resolve(java.lang.Object)}ed yet
-     * @throws IllegalStateException in the case where this method is called and
-     * this object is not yet resolved
-     */
-    public T get() {
-        //TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
-    }
+	/**
+	 *
+	 * @return the resolved value if such exists (i.e., if this object has been
+	 *         {@link #resolve(java.lang.Object)}ed yet
+	 * @throws IllegalStateException
+	 *             in the case where this method is called and this object is
+	 *             not yet resolved
+	 */
+	public T get() {
+		// TODO: replace method body with real implementation
+		throw new UnsupportedOperationException("Not Implemented Yet.");
+	}
 
-    /**
-     *
-     * @return true if this object has been resolved - i.e., if the method
-     * {@link #resolve(java.lang.Object)} has been called on this object before.
-     */
-    public boolean isResolved() {
-        //TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
-    }
+	/**
+	 *
+	 * @return true if this object has been resolved - i.e., if the method
+	 *         {@link #resolve(java.lang.Object)} has been called on this object
+	 *         before.
+	 */
+	public boolean isResolved() {
+		// TODO: replace method body with real implementation
+		throw new UnsupportedOperationException("Not Implemented Yet.");
+	}
 
-    /**
-     * resolve this deferred object - from now on, any call to the method
-     * {@link #get()} should return the given value
-     *
-     * Any callbacks that were registered to be notified when this object is
-     * resolved via the {@link #whenResolved(java.lang.Runnable)} method should
-     * be executed before this method returns
-     *
-     * @param value - the value to resolve this deferred object with
-     * @throws IllegalStateException in the case where this object is already
-     * resolved
-     */
-    public void resolve(T value) {
-        //TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
-    }
+	/**
+	 * resolve this deferred object - from now on, any call to the method
+	 * {@link #get()} should return the given value
+	 *
+	 * Any callbacks that were registered to be notified when this object is
+	 * resolved via the {@link #whenResolved(java.lang.Runnable)} method should
+	 * be executed before this method returns
+	 *
+	 * @param value
+	 *            - the value to resolve this deferred object with
+	 * @throws IllegalStateException
+	 *             in the case where this object is already resolved
+	 */
+	public void resolve(T value) {
+		// TODO: replace method body with real implementation
+		// callBack[i].run()
+		throw new UnsupportedOperationException("Not Implemented Yet.");
+	}
 
-    /**
-     * add a callback to be called when this object is resolved. if while
-     * calling this method the object is already resolved - the callback should
-     * be called immediately
-     *
-     * Note that in any case, the given callback should never get called more
-     * than once, in addition, in order to avoid memory leaks - once the
-     * callback got called, this object should not hold its reference any
-     * longer.
-     *
-     * @param callback the callback to be called when the deferred object is
-     * resolved
-     */
-    public void whenResolved(Runnable callback) {
-        //TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
-    }
+	/**
+	 * add a callback to be called when this object is resolved. if while
+	 * calling this method the object is already resolved - the callback should
+	 * be called immediately
+	 *
+	 * Note that in any case, the given callback should never get called more
+	 * than once, in addition, in order to avoid memory leaks - once the
+	 * callback got called, this object should not hold its reference any
+	 * longer.
+	 *
+	 * @param callback
+	 *            the callback to be called when the deferred object is resolved
+	 */
+	public void whenResolved(Runnable callback) {
+		// this.allbacks.add(callback)
+		// TODO: replace method body with real implementation
+		throw new UnsupportedOperationException("Not Implemented Yet.");
+	}
 
 }
