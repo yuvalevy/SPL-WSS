@@ -1,6 +1,7 @@
 package bgu.spl.a2;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * an abstract class that represents a task that may be executed using the
@@ -17,7 +18,7 @@ import java.util.Collection;
 public abstract class Task<R> {
 
 	private boolean isStarted = false;
-	private int count = 0;
+	// private AtomicInteger count;
 
 	private Processor handler;
 	private Deferred<R> defrred = new Deferred<R>();
@@ -47,7 +48,7 @@ public abstract class Task<R> {
 			this.isStarted = true;
 			start();
 		} else {
-			// TODO what else?
+			this.resolvedCallback.run();
 		}
 	}
 
@@ -59,8 +60,6 @@ public abstract class Task<R> {
 	 *            - the task calculated result
 	 */
 	protected final void complete(R result) {
-
-		// TODO if null?
 
 		this.defrred.resolve(result);
 	}
@@ -74,12 +73,8 @@ public abstract class Task<R> {
 	 */
 	protected final void spawn(Task<?>... task) {
 
-		// using += to allow the call of spawn several times at start()
-		this.count += task.length;
-
 		// TODO add this method to Processor
 		// this.handler.addTasks(task);
-
 	}
 
 	/**
@@ -104,35 +99,24 @@ public abstract class Task<R> {
 
 		this.resolvedCallback = callback;
 
+		// In case whenResolved is called more than once
+		AtomicInteger count = new AtomicInteger(tasks.size());
+
 		for (Task<?> task : tasks) {
-			task.getResult().whenResolved(() -> {
-				this.notifyOnce();
-			});
+			task.getResult().whenResolved(
+					/**
+					 * Increases the results counter by one. When counter is 0,
+					 * it means that all sub-tasks finished and it is time to
+					 * notify() and resume whenResolved for this task
+					 */
+					() -> {
+
+						count.incrementAndGet();
+						if (count.get() == 0) {
+							addMyselfToProcessor();
+						}
+					});
 		}
-
-		new Thread(() -> {
-
-			// TODO IDK if this should be exactly like this. For now, in order
-			// to compile, it is here. :|
-			synchronized (this) {
-
-				try {
-					this.wait();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-
-			}
-			// TODO should it be here
-			this.resolvedCallback.run();
-
-			// TODO return myself to queue?
-			// this.handler.addTasks(this);
-
-		});
-
-		// TODO the fuck i do with this thread??
-
 	}
 
 	/**
@@ -144,17 +128,12 @@ public abstract class Task<R> {
 	}
 
 	/**
-	 * Increases the results counter by one. When counter is 0, it means that
-	 * all sub-tasks finished and it is time to notify() and resume whenResolved
-	 * for this task
+	 * returns this to the original processor who handled the task
 	 */
-	private void notifyOnce() {
+	private void addMyselfToProcessor() {
 
-		// synchronized (_lockCount)
-		// DO NOT lock 'this' here. wait() locked this!
-		this.count--;
-		if (this.count == 0) {
-			notify();
-		}
+		// TODO return myself to queue
+		// this.handler.addTasks(this);
 	}
+
 }
