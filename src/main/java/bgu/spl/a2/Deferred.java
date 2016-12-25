@@ -19,14 +19,16 @@ import java.util.Stack;
  */
 public class Deferred<T> {
 
-	T result;
+	private T result;
 	private boolean isResolved;
-	Stack<Runnable> callbacks;
+	private Object lockResult;
+	private Stack<Runnable> callbacks;
 
 	Deferred() {
 		this.isResolved = false;
 		this.result = null;
 		this.callbacks = new Stack<Runnable>();
+		this.lockResult = new Object();
 	}
 
 	/**
@@ -39,8 +41,10 @@ public class Deferred<T> {
 	 */
 	public T get() {
 
-		if (this.isResolved) {
-			return this.result;
+		synchronized (lockResult) {
+			if (this.isResolved) {
+				return this.result;
+			}
 		}
 
 		throw new IllegalStateException("Object was not yet resolved");
@@ -53,7 +57,9 @@ public class Deferred<T> {
 	 *         before.
 	 */
 	public boolean isResolved() {
-		return this.isResolved;
+		synchronized (lockResult) {
+			return this.isResolved;
+		}
 	}
 
 	/**
@@ -71,9 +77,10 @@ public class Deferred<T> {
 	 */
 	public void resolve(T value) {
 
-		// TODO sync result implementation with isResolved() and get()
-		this.result = value;
-		this.isResolved = true;
+		synchronized (lockResult) {
+			this.result = value;
+			this.isResolved = true;
+		}
 
 		while (!this.callbacks.isEmpty()) {
 			Runnable runnable = this.callbacks.pop();
@@ -99,12 +106,18 @@ public class Deferred<T> {
 
 		if (callback != null) {
 
-			// TODO sync here to avoid resolving the object before adding this
-			// callback
-			if (this.isResolved) {
+			boolean flag = false;
+			synchronized (lockResult) {
+
+				if (!isResolved) {
+					this.callbacks.add(callback);
+				} else {
+					flag = true;
+				}
+			}
+
+			if (flag) {
 				callback.run();
-			} else {
-				this.callbacks.add(callback);
 			}
 		}
 	}
