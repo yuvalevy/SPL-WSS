@@ -39,7 +39,19 @@ public class Processor implements Runnable {
 		this.id = id;
 		this.pool = pool;
 		this.nprocessors = pool.getNthreads();
-		this.victimId = (id + 1) % nprocessors;
+		this.victimId = (id + 1) % this.nprocessors;
+	}
+
+	/**
+	 * Add the tasks to the processor's queue
+	 *
+	 * @param tasks
+	 */
+	void addToQueue(Task<?>... tasks) {
+
+		for (Task<?> task : tasks) {
+			this.pool.submitById(this.id, task);
+		}
 	}
 
 	@Override
@@ -69,9 +81,9 @@ public class Processor implements Runnable {
 	 */
 	private void steal() {
 
-		if (!this.pool.steal(id, victimId)) {
+		if (!this.pool.steal(this.id, this.victimId)) {
 
-			VersionMonitor monitor = pool.getMonitor(id);
+			VersionMonitor monitor = this.pool.getMonitor();
 			int version = monitor.getVersion();
 
 			try {
@@ -83,22 +95,10 @@ public class Processor implements Runnable {
 			}
 		}
 
-		this.victimId = (victimId + 1) % nprocessors;
+		this.victimId = (this.victimId + 1) % this.nprocessors;
 
-		if (this.victimId == id) {
-			this.victimId = (victimId + 1) % nprocessors;
-		}
-	}
-
-	/**
-	 * Add the tasks to the processor's queue
-	 * 
-	 * @param tasks
-	 */
-	void addToQueue(Task<?>... tasks) {
-
-		for (Task<?> task : tasks) {
-			this.pool.submitById(id, task);
+		if (this.victimId == this.id) {
+			this.victimId = (this.victimId + 1) % this.nprocessors;
 		}
 	}
 }
