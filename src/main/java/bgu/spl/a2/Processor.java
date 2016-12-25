@@ -13,34 +13,82 @@ package bgu.spl.a2;
  */
 public class Processor implements Runnable {
 
-    private final WorkStealingThreadPool pool;
-    private final int id;
+	private final WorkStealingThreadPool pool;
+	private final int id;
+	private final int nprocessors;
+	private int victimId;
 
-    /**
-     * constructor for this class
-     *
-     * IMPORTANT:
-     * 1) this method is package protected, i.e., only classes inside
-     * the same package can access it - you should *not* change it to
-     * public/private/protected
-     *
-     * 2) you may not add other constructors to this class
-     * nor you allowed to add any other parameter to this constructor - changing
-     * this may cause automatic tests to fail..
-     *
-     * @param id - the processor id (every processor need to have its own unique
-     * id inside its thread pool)
-     * @param pool - the thread pool which owns this processor
-     */
-    /*package*/ Processor(int id, WorkStealingThreadPool pool) {
-        this.id = id;
-        this.pool = pool;
-    }
+	/**
+	 * constructor for this class
+	 *
+	 * IMPORTANT: 1) this method is package protected, i.e., only classes inside
+	 * the same package can access it - you should *not* change it to
+	 * public/private/protected
+	 *
+	 * 2) you may not add other constructors to this class nor you allowed to
+	 * add any other parameter to this constructor - changing this may cause
+	 * automatic tests to fail..
+	 *
+	 * @param id
+	 *            - the processor id (every processor need to have its own
+	 *            unique id inside its thread pool)
+	 * @param pool
+	 *            - the thread pool which owns this processor
+	 */
+	Processor(int id, WorkStealingThreadPool pool) {
+		this.id = id;
+		this.pool = pool;
+		this.nprocessors = pool.getNthreads();
+		this.victimId = (id + 1) % nprocessors;
+	}
 
-    @Override
-    public void run() {
-        //TODO: replace method body with real implementation
-        throw new UnsupportedOperationException("Not Implemented Yet.");
-    }
+	@Override
+	public void run() {
 
+		Task<?> currentTask = null;
+
+		while (!Thread.currentThread().isInterrupted()) {
+
+			currentTask = this.pool.getNextTask(this.id);
+
+			if (currentTask != null) {
+
+				currentTask.handle(this);
+
+			} else {
+
+				if (!this.pool.steal(id, victimId)) {
+
+					VersionMonitor monitor = pool.getMonitor(id);
+					int version = monitor.getVersion();
+
+					try {
+
+						monitor.await(version);
+					} catch (InterruptedException e) {
+
+						Thread.currentThread().interrupt();
+					}
+				}
+
+				this.victimId = (victimId + 1) % nprocessors;
+
+				if (this.victimId == id) {
+					this.victimId = (victimId + 1) % nprocessors;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Add the tasks to the processor's queue
+	 * 
+	 * @param tasks
+	 */
+	void addToQueue(Task<?>... tasks) {
+
+		for (Task<?> task : tasks) {
+			this.pool.submitById(id, task);
+		}
+	}
 }

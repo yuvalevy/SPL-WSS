@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class Task<R> {
 
 	private boolean isStarted = false;
-	// private AtomicInteger count;
 
 	private Processor handler;
 	private Deferred<R> defrred = new Deferred<R>();
@@ -73,8 +72,7 @@ public abstract class Task<R> {
 	 */
 	protected final void spawn(Task<?>... task) {
 
-		// TODO add this method to Processor
-		// this.handler.addTasks(task);
+		this.handler.addToQueue(task);
 	}
 
 	/**
@@ -105,15 +103,15 @@ public abstract class Task<R> {
 		for (Task<?> task : tasks) {
 			task.getResult().whenResolved(
 					/**
-					 * Increases the results counter by one. When counter is 0,
+					 * Decreases the results counter by one. When counter is 0,
 					 * it means that all sub-tasks finished and it is time to
-					 * notify() and resume whenResolved for this task
+					 * return the task to the processor
 					 */
 					() -> {
 
-						count.incrementAndGet();
+						count.decrementAndGet();
 						if (count.get() == 0) {
-							addMyselfToProcessor();
+							spawn(this);
 						}
 					});
 		}
@@ -125,15 +123,6 @@ public abstract class Task<R> {
 	public final Deferred<R> getResult() {
 
 		return this.defrred;
-	}
-
-	/**
-	 * returns this to the original processor who handled the task
-	 */
-	private void addMyselfToProcessor() {
-
-		// TODO return myself to queue
-		// this.handler.addTasks(this);
 	}
 
 }
