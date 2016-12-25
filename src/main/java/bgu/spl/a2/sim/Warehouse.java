@@ -25,7 +25,7 @@ public class Warehouse {
 
 	/**
 	 * Tool acquisition procedure Note that this procedure is non-blocking and
-	 * should return immediatly
+	 * should return immediately
 	 *
 	 * @param type
 	 *            - string describing the required tool

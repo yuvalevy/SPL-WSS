@@ -5,6 +5,7 @@ package bgu.spl.a2.sim.conf;
  *
  **/
 public class ManufactoringPlan {
+
 	/**
 	 * ManufactoringPlan constructor
 	 *
