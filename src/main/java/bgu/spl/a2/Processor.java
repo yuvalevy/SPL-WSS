@@ -57,26 +57,36 @@ public class Processor implements Runnable {
 
 			} else {
 
-				if (!this.pool.steal(id, victimId)) {
-
-					VersionMonitor monitor = pool.getMonitor(id);
-					int version = monitor.getVersion();
-
-					try {
-
-						monitor.await(version);
-					} catch (InterruptedException e) {
-
-						Thread.currentThread().interrupt();
-					}
-				}
-
-				this.victimId = (victimId + 1) % nprocessors;
-
-				if (this.victimId == id) {
-					this.victimId = (victimId + 1) % nprocessors;
-				}
+				steal();
 			}
+		}
+
+		this.pool.getLatch().countDown();
+	}
+
+	/**
+	 * Steals half of the tasks from another processors
+	 */
+	private void steal() {
+
+		if (!this.pool.steal(id, victimId)) {
+
+			VersionMonitor monitor = pool.getMonitor(id);
+			int version = monitor.getVersion();
+
+			try {
+
+				monitor.await(version);
+			} catch (InterruptedException e) {
+
+				Thread.currentThread().interrupt();
+			}
+		}
+
+		this.victimId = (victimId + 1) % nprocessors;
+
+		if (this.victimId == id) {
+			this.victimId = (victimId + 1) % nprocessors;
 		}
 	}
 

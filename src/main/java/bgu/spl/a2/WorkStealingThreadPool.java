@@ -3,6 +3,7 @@ package bgu.spl.a2;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * represents a work stealing thread pool - to understand what this class does
@@ -18,6 +19,7 @@ public class WorkStealingThreadPool {
 
 	private LinkedList<Triple<Thread, ConcurrentLinkedDeque<Task<?>>, VersionMonitor>> processorsInfo;
 	private int nthreads;
+	private CountDownLatch latch;
 
 	/**
 	 * creates a {@link WorkStealingThreadPool} which has nthreads
@@ -34,6 +36,7 @@ public class WorkStealingThreadPool {
 	 */
 	public WorkStealingThreadPool(int nthreads) {
 
+		latch = new CountDownLatch(nthreads);
 		this.nthreads = nthreads;
 		this.processorsInfo = new LinkedList<Triple<Thread, ConcurrentLinkedDeque<Task<?>>, VersionMonitor>>();
 
@@ -63,7 +66,7 @@ public class WorkStealingThreadPool {
 	 *            the task to execute
 	 */
 	public void submit(Task<?> task) {
-		submitById(new Random().nextInt(nthreads + 1), task);
+		submitById(new Random().nextInt(nthreads), task);
 	}
 
 	/**
@@ -99,6 +102,8 @@ public class WorkStealingThreadPool {
 		for (Triple<Thread, ConcurrentLinkedDeque<Task<?>>, VersionMonitor> triple : processorsInfo) {
 			triple.getFirst().interrupt();
 		}
+
+		this.latch.await();
 	}
 
 	/**
@@ -166,7 +171,11 @@ public class WorkStealingThreadPool {
 	}
 
 	int getNthreads() {
-		return nthreads;
+		return this.nthreads;
+	}
+
+	public CountDownLatch getLatch() {
+		return this.latch;
 	}
 
 }
