@@ -55,7 +55,7 @@ public class Warehouse {
 	 *            - amount of tools of type tool to be stored
 	 */
 	public void addTool(Tool tool, int qty) {
-
+		// TODO: use atomicIneger
 	}
 
 	/**

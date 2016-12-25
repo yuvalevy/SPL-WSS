@@ -13,29 +13,10 @@ public class SumMatrix extends Task<int[]> {
 		this.array = array;
 	}
 
-	protected void start() {
-		List<Task<Integer>> tasks = new ArrayList<>();
-		int rows = array.length;
-		for (int i = 0; i < rows; i++) {
-			SumRow newTask = new SumRow(array, i);
-			spawn(newTask);
-			tasks.add(newTask);
-		}
-
-		whenResolved(tasks, () -> {
-
-			int[] res = new int[rows];
-			for (int j = 0; j < rows; j++) {
-				res[j] = tasks.get(j).getResult().get();
-			}
-			complete(res);
-		});
-	}
-
 	public static void main(String[] args) {
 
-		WorkStealingThreadPool pool = new WorkStealingThreadPool(2);
-		int[][] array = new int[5][2];
+		WorkStealingThreadPool pool = new WorkStealingThreadPool(3);
+		int[][] array = new int[10000][10000];
 
 		for (int i = 0; i < array.length; i++) {
 			for (int j = 0; j < array[i].length; j++) {
@@ -49,7 +30,7 @@ public class SumMatrix extends Task<int[]> {
 		pool.start();
 
 		try {
-			Thread.sleep(150);
+			Thread.sleep(450);
 			pool.shutdown();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -61,5 +42,25 @@ public class SumMatrix extends Task<int[]> {
 		for (int i = 0; i < array.length; i++) {
 			System.out.println("row: " + i + ": " + js[i]);
 		}
+	}
+
+	@Override
+	protected void start() {
+		List<Task<Integer>> tasks = new ArrayList<>();
+		int rows = this.array.length;
+		for (int i = 0; i < rows; i++) {
+			SumRow newTask = new SumRow(this.array, i);
+			spawn(newTask);
+			tasks.add(newTask);
+		}
+
+		whenResolved(tasks, () -> {
+
+			int[] res = new int[rows];
+			for (int j = 0; j < rows; j++) {
+				res[j] = tasks.get(j).getResult().get();
+			}
+			complete(res);
+		});
 	}
 }

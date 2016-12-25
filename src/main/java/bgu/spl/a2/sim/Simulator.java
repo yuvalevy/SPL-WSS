@@ -13,6 +13,7 @@ import bgu.spl.a2.WorkStealingThreadPool;
  * A class describing the simulator for part 2 of the assignment
  */
 public class Simulator {
+
 	/**
 	 * attach a WorkStealingThreadPool to the Simulator, this
 	 * WorkStealingThreadPool will be used to run the simulation
@@ -33,6 +34,7 @@ public class Simulator {
 	 * attachWorkStealingThreadPool()
 	 */
 	public static ConcurrentLinkedQueue<Product> start() {
+		// TODO flag - is attachWorkStealingThreadPool() called
 		return null;
 	}
 }

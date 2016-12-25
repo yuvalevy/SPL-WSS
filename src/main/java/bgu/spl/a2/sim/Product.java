@@ -33,6 +33,7 @@ public class Product {
 	 *         received as the sum of all UseOn();
 	 */
 	public long getFinalId() {
+		// TODO what happends when object was not resolved?
 		return 0;
 	}
 
