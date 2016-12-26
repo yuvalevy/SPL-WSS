@@ -1,9 +1,8 @@
 package bgu.spl.a2.sim;
 
-import javax.tools.Tool;
-
 import bgu.spl.a2.Deferred;
 import bgu.spl.a2.sim.conf.ManufactoringPlan;
+import bgu.spl.a2.sim.tools.Tool;
 
 /**
  * A class representing the warehouse in your simulation
@@ -32,6 +31,15 @@ public class Warehouse {
 	 * @return a deferred promise for the requested tool
 	 */
 	public Deferred<Tool> acquireTool(String type) {
+
+		// if (tool . count > 0){
+		// Deferred<Tool> d = ..
+		// d.resolve(this.tool(type));
+		// else{
+		// Deferred<Tool> d = ..
+		// deferres.add(d);
+		// }
+		// return d
 		return null;
 	}
 
@@ -79,6 +87,15 @@ public class Warehouse {
 	 */
 	public void releaseTool(Tool tool) {
 
+		// deferres - all products that are waiting for the tool
+
+		// lock (lock[tool]){
+		// if(deferres[tool].size() > 0 ){
+		// deferres[tool].pop().resolved(tool);
+		// }else{
+		// qnt[tool] ++
+		// }
+		// }
 	}
 
 }

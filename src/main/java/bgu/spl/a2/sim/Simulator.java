@@ -24,6 +24,8 @@ public class Simulator {
 	 */
 	public static void attachWorkStealingThreadPool(WorkStealingThreadPool myWorkStealingThreadPool) {
 
+		// myWorkStealingThreadPool.sumnit( new ManuTask( read first product of
+		// first wave ));
 	}
 
 	public static void main(String[] args) {

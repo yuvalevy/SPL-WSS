@@ -1,11 +1,18 @@
 package bgu.spl.a2.sim;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * A class that represents a product produced during the simulation.
  */
 public class Product {
+
+	private long finalId;
+	List<Product> products;
+	private String name;
+	private long startId;
+
 	/**
 	 * Constructor
 	 *
@@ -16,6 +23,10 @@ public class Product {
 	 */
 	public Product(long startId, String name) {
 
+		this.name = name;
+		this.startId = startId;
+		this.finalId = startId;
+		this.products = new ArrayList<Product>();
 	}
 
 	/**
@@ -25,7 +36,7 @@ public class Product {
 	 *            - part to be added as a Product object
 	 */
 	public void addPart(Product p) {
-
+		this.products.add(p);
 	}
 
 	/**
@@ -33,29 +44,38 @@ public class Product {
 	 *         received as the sum of all UseOn();
 	 */
 	public long getFinalId() {
-		// TODO what happends when object was not resolved?
-		return 0;
+		return finalId;
+	}
+
+	/**
+	 * Sets the final id
+	 * 
+	 * @param id
+	 *            the new id
+	 */
+	public void setFinalId(long id) {
+		this.finalId = id;
 	}
 
 	/**
 	 * @return The product name as a string
 	 */
 	public String getName() {
-		return null;
+		return this.name;
 	}
 
 	/**
 	 * @return Returns all parts of this product as a List of Products
 	 */
 	public List<Product> getParts() {
-		return null;
+		return this.products;
 	}
 
 	/**
 	 * @return The product start ID as a long. start ID should never be changed.
 	 */
 	public long getStartId() {
-		return 0;
+		return this.startId;
 	}
 
 }

@@ -6,6 +6,10 @@ package bgu.spl.a2.sim.conf;
  **/
 public class ManufactoringPlan {
 
+	private final String sProduct;
+	private final String[] parts;
+	private final String[] tools;
+
 	/**
 	 * ManufactoringPlan constructor
 	 *
@@ -18,27 +22,31 @@ public class ManufactoringPlan {
 	 */
 	public ManufactoringPlan(String product, String[] parts, String[] tools) {
 
+		this.sProduct = product;
+		this.parts = parts;
+		this.tools = tools;
+
 	}
 
 	/**
 	 * @return array of strings describing the plans part names
 	 */
 	public String[] getParts() {
-		return null;
+		return this.parts;
 	}
 
 	/**
 	 * @return string containing product name
 	 */
 	public String getProductName() {
-		return null;
+		return this.sProduct;
 	}
 
 	/**
 	 * @return array of strings describing the plans tools names
 	 */
 	public String[] getTools() {
-		return null;
+		return this.tools;
 	}
 
 }
