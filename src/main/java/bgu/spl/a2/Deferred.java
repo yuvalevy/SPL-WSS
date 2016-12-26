@@ -24,7 +24,7 @@ public class Deferred<T> {
 	private Object lockResult;
 	private Stack<Runnable> callbacks;
 
-	Deferred() {
+	public Deferred() {
 		this.isResolved = false;
 		this.result = null;
 		this.callbacks = new Stack<Runnable>();

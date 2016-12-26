@@ -1,5 +1,9 @@
 package bgu.spl.a2.sim;
 
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import bgu.spl.a2.Deferred;
 import bgu.spl.a2.sim.conf.ManufactoringPlan;
 import bgu.spl.a2.sim.tools.Tool;
@@ -15,11 +19,20 @@ import bgu.spl.a2.sim.tools.Tool;
  */
 public class Warehouse {
 
+	private HashMap<String, ManufactoringPlan> plans;
+	private HashMap<String, Tool> toolsObjects;
+	private HashMap<String, AtomicInteger> toolsAmount;
+	private HashMap<String, ConcurrentLinkedQueue<Deferred<Tool>>> toolsDeferres;
+
 	/**
 	 * Constructor
 	 */
 	public Warehouse() {
 
+		this.plans = new HashMap<String, ManufactoringPlan>();
+		this.toolsObjects = new HashMap<String, Tool>();
+		this.toolsAmount = new HashMap<String, AtomicInteger>();
+		this.toolsDeferres = new HashMap<String, ConcurrentLinkedQueue<Deferred<Tool>>>();
 	}
 
 	/**
@@ -32,15 +45,24 @@ public class Warehouse {
 	 */
 	public Deferred<Tool> acquireTool(String type) {
 
-		// if (tool . count > 0){
-		// Deferred<Tool> d = ..
-		// d.resolve(this.tool(type));
-		// else{
-		// Deferred<Tool> d = ..
-		// deferres.add(d);
-		// }
-		// return d
-		return null;
+		Tool tool = this.toolsObjects.get(type);
+
+		synchronized (tool) {
+
+			Deferred<Tool> deferred = new Deferred<Tool>();
+
+			if (this.toolsAmount.get(type).get() > 0) {
+
+				deferred.resolve(tool);
+				this.toolsAmount.get(type).decrementAndGet();
+
+			} else {
+
+				this.toolsDeferres.get(type).add(deferred);
+			}
+			return deferred;
+		}
+
 	}
 
 	/**
@@ -51,6 +73,7 @@ public class Warehouse {
 	 */
 	public void addPlan(ManufactoringPlan plan) {
 
+		this.plans.put(plan.getProductName(), plan);
 	}
 
 	/**
@@ -63,7 +86,12 @@ public class Warehouse {
 	 *            - amount of tools of type tool to be stored
 	 */
 	public void addTool(Tool tool, int qty) {
-		// TODO: use atomicIneger
+
+		String type = tool.getType();
+		this.toolsAmount.put(type, new AtomicInteger(qty));
+		this.toolsDeferres.put(type, new ConcurrentLinkedQueue<Deferred<Tool>>());
+		this.toolsObjects.put(type, tool);
+
 	}
 
 	/**
@@ -75,7 +103,7 @@ public class Warehouse {
 	 * @return A ManufactoringPlan for product
 	 */
 	public ManufactoringPlan getPlan(String product) {
-		return null;
+		return this.plans.get(product);
 	}
 
 	/**
@@ -87,15 +115,20 @@ public class Warehouse {
 	 */
 	public void releaseTool(Tool tool) {
 
-		// deferres - all products that are waiting for the tool
+		synchronized (tool) {
 
-		// lock (lock[tool]){
-		// if(deferres[tool].size() > 0 ){
-		// deferres[tool].pop().resolved(tool);
-		// }else{
-		// qnt[tool] ++
-		// }
-		// }
+			String toolType = tool.getType();
+
+			if (this.toolsDeferres.get(toolType).size() > 0) {
+
+				Deferred<Tool> d = this.toolsDeferres.get(toolType).poll();
+				d.resolve(tool);
+
+			} else {
+				this.toolsAmount.get(toolType).incrementAndGet();
+			}
+		}
+
 	}
 
 }
