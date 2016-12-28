@@ -79,6 +79,10 @@ public class WorkStealingThreadPool {
 
 	}
 
+	CountDownLatch getLatch() {
+		return this.latch;
+	}
+
 	/**
 	 * Returns the monitor
 	 *
@@ -148,10 +152,6 @@ public class WorkStealingThreadPool {
 
 		this.processorsInfo.get(id).getSecond().addLast(task);
 		this.monitor.inc();
-	}
-
-	public CountDownLatch getLatch() {
-		return this.latch;
 	}
 
 	/**
