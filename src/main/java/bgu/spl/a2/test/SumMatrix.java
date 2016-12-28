@@ -2,6 +2,8 @@ package bgu.spl.a2.test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 import bgu.spl.a2.Task;
 import bgu.spl.a2.WorkStealingThreadPool;
@@ -15,33 +17,61 @@ public class SumMatrix extends Task<int[]> {
 
 	public static void main(String[] args) {
 
-		WorkStealingThreadPool pool = new WorkStealingThreadPool(3);
-		int[][] array = new int[10000][10000];
+		for (int j1 = 0; j1 < 150; j1++) {
+
+			WorkStealingThreadPool pool = new WorkStealingThreadPool(3);
+			int[][] array = new int[1000][100];
+
+			Random r = new Random();
+			for (int i = 0; i < array.length; i++) {
+				for (int j = 0; j < array[i].length; j++) {
+					array[i][j] = r.nextInt(1000);
+				}
+			}
+
+			SumMatrix myTask = new SumMatrix(array);
+
+			pool.submit(myTask);
+			pool.start();
+
+			CountDownLatch l = new CountDownLatch(1);
+
+			myTask.getResult().whenResolved(() -> {
+				l.countDown();
+			});
+
+			try {
+				l.await();
+				pool.shutdown();
+				int[] js = myTask.getResult().get();
+
+				System.out.println(test(array, js));
+				// for (int i = 0; i < array.length; i++) {
+				// System.out.println("row: " + i + ": " + js[i]);
+				// }
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+
+		}
+	}
+
+	public static boolean test(int[][] array, int[] result) {
 
 		for (int i = 0; i < array.length; i++) {
+			int sum = 0;
 			for (int j = 0; j < array[i].length; j++) {
-				array[i][j] = i;
+				sum += array[i][j];
+			}
+			if (sum != result[i]) {
+				System.out.println("######");
+				return false;
 			}
 		}
 
-		SumMatrix myTask = new SumMatrix(array);
+		return true;
 
-		pool.submit(myTask);
-		pool.start();
-
-		try {
-			Thread.sleep(450);
-			pool.shutdown();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		int[] js = myTask.getResult().get();
-
-		for (int i = 0; i < array.length; i++) {
-			System.out.println("row: " + i + ": " + js[i]);
-		}
 	}
 
 	@Override
