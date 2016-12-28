@@ -17,6 +17,7 @@ public class Processor implements Runnable {
 	private final int id;
 	private final int nprocessors;
 	private int victimId;
+	private VersionMonitor monitor;
 
 	/**
 	 * constructor for this class
@@ -40,6 +41,8 @@ public class Processor implements Runnable {
 		this.pool = pool;
 		this.nprocessors = pool.getNthreads();
 		this.victimId = (id + 1) % this.nprocessors;
+		this.monitor = this.pool.getMonitor();
+
 	}
 
 	/**
@@ -61,6 +64,7 @@ public class Processor implements Runnable {
 
 		while (!Thread.currentThread().isInterrupted()) {
 
+			int version = this.monitor.getVersion();
 			currentTask = this.pool.getNextTask(this.id);
 
 			if (currentTask != null) {
@@ -69,7 +73,8 @@ public class Processor implements Runnable {
 
 			} else {
 
-				steal();
+				steal(version);
+
 			}
 		}
 
@@ -79,16 +84,14 @@ public class Processor implements Runnable {
 	/**
 	 * Steals half of the tasks from another processors
 	 */
-	private void steal() {
+	private void steal(int version) {
 
 		if (!this.pool.steal(this.id, this.victimId)) {
 
-			VersionMonitor monitor = this.pool.getMonitor();
-			int version = monitor.getVersion();
-
 			try {
 
-				monitor.await(version);
+				this.monitor.await(version);
+
 			} catch (InterruptedException e) {
 
 				Thread.currentThread().interrupt();
