@@ -2,6 +2,7 @@ package bgu.spl.a2.sim;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
 import bgu.spl.a2.Deferred;
@@ -52,23 +53,40 @@ class ManufactoringTask extends Task<Product> {
 				product.addPart(pro);
 			}
 
-			for (String stool : plan.getTools()) {
+			String[] tools = plan.getTools();
 
-				Deferred<Tool> acq = warehouse.acquireTool(stool);
+			CountDownLatch toolsLatch = new CountDownLatch(tools.length);
+			for (String sTool : tools) {
+
+				Deferred<Tool> acq = warehouse.acquireTool(sTool);
 				// When this tool is acquired, this callback is called
 				acq.whenResolved(() -> {
 
 					Tool tool = acq.get();
 
 					incId(tool.useOn(product));
+					toolsLatch.countDown();
 
 					warehouse.releaseTool(tool);
 
 				});
 			}
 
-			product.setFinalId(this.newId.get() + this.startId);
-			complete(product);
+			try {
+				toolsLatch.await();
+			} catch (Exception e) {
+
+				Thread.interrupted();
+			}
+
+			// if thread was interrupted, it is not necessarily safe to complete
+			if (!Thread.currentThread().isInterrupted()) {
+
+				// Only after all the tools were used on product, it is safe to
+				// complete
+				product.setFinalId(this.newId.get() + this.startId);
+				complete(product);
+			}
 
 		});
 	}
