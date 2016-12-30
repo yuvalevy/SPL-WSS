@@ -8,6 +8,50 @@ import bgu.spl.a2.Deferred;
 import bgu.spl.a2.sim.conf.ManufactoringPlan;
 import bgu.spl.a2.sim.tools.Tool;
 
+class WarehouseTool {
+
+	private Tool tool;
+	private AtomicInteger toolAmount;
+	private ConcurrentLinkedQueue<Deferred<Tool>> toolDeferres;
+
+	WarehouseTool(Tool tool, int qty) {
+
+		this.tool = tool;
+		this.toolAmount = new AtomicInteger(qty);
+		this.toolDeferres = new ConcurrentLinkedQueue<Deferred<Tool>>();
+
+	}
+
+	Tool getTool() {
+		return this.tool;
+	}
+
+	int getAmount() {
+		return this.toolAmount.get();
+	}
+
+	void increment() {
+		this.toolAmount.incrementAndGet();
+	}
+
+	void decrement() {
+		this.toolAmount.decrementAndGet();
+	}
+
+	void addDeferred(Deferred<Tool> deferred) {
+		this.toolDeferres.add(deferred);
+	}
+
+	int getDeferredCount() {
+		return this.toolDeferres.size();
+	}
+
+	Deferred<Tool> pollDeferred() {
+		return this.toolDeferres.poll();
+	}
+
+}
+
 /**
  * A class representing the warehouse in your simulation
  *
@@ -20,19 +64,16 @@ import bgu.spl.a2.sim.tools.Tool;
 public class Warehouse {
 
 	private HashMap<String, ManufactoringPlan> plans;
-	private HashMap<String, Tool> toolsObjects;
-	private HashMap<String, AtomicInteger> toolsAmount;
-	private HashMap<String, ConcurrentLinkedQueue<Deferred<Tool>>> toolsDeferres;
+	private HashMap<String, WarehouseTool> tools;
 
 	/**
 	 * Constructor
 	 */
 	public Warehouse() {
 
+		this.tools = new HashMap<String, WarehouseTool>();
+
 		this.plans = new HashMap<String, ManufactoringPlan>();
-		this.toolsObjects = new HashMap<String, Tool>();
-		this.toolsAmount = new HashMap<String, AtomicInteger>();
-		this.toolsDeferres = new HashMap<String, ConcurrentLinkedQueue<Deferred<Tool>>>();
 	}
 
 	/**
@@ -45,20 +86,21 @@ public class Warehouse {
 	 */
 	public Deferred<Tool> acquireTool(String type) {
 
-		Tool tool = this.toolsObjects.get(type);
+		WarehouseTool warehouseTool = this.tools.get(type);
+		Tool tool = warehouseTool.getTool();
 
 		synchronized (tool) {
 
 			Deferred<Tool> deferred = new Deferred<Tool>();
 
-			if (this.toolsAmount.get(type).get() > 0) {
+			if (warehouseTool.getAmount() > 0) {
 
 				deferred.resolve(tool);
-				this.toolsAmount.get(type).decrementAndGet();
+				warehouseTool.decrement();
 
 			} else {
 
-				this.toolsDeferres.get(type).add(deferred);
+				warehouseTool.addDeferred(deferred);
 			}
 			return deferred;
 		}
@@ -88,10 +130,9 @@ public class Warehouse {
 	public void addTool(Tool tool, int qty) {
 
 		String type = tool.getType();
-		this.toolsAmount.put(type, new AtomicInteger(qty));
-		this.toolsDeferres.put(type, new ConcurrentLinkedQueue<Deferred<Tool>>());
-		this.toolsObjects.put(type, tool);
+		WarehouseTool wht = new WarehouseTool(tool, qty);
 
+		this.tools.put(type, wht);
 	}
 
 	/**
@@ -118,14 +159,15 @@ public class Warehouse {
 		synchronized (tool) {
 
 			String toolType = tool.getType();
+			WarehouseTool warehouseTool = this.tools.get(toolType);
 
-			if (this.toolsDeferres.get(toolType).size() > 0) {
+			if (warehouseTool.getDeferredCount() > 0) {
 
-				Deferred<Tool> d = this.toolsDeferres.get(toolType).poll();
+				Deferred<Tool> d = warehouseTool.pollDeferred();
 				d.resolve(tool);
 
 			} else {
-				this.toolsAmount.get(toolType).incrementAndGet();
+				warehouseTool.increment();
 			}
 		}
 
