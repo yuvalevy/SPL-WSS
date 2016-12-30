@@ -89,7 +89,7 @@ public class Processor implements Runnable {
 		int victim = (this.id + 1) % this.nprocessors;
 		boolean hasVictim = false;
 
-		while (victim != this.id | !hasVictim) {
+		while (victim != this.id & !hasVictim) {
 			hasVictim = this.pool.steal(this.id, victim);
 			victim = (victim + 1) % this.nprocessors;
 		}

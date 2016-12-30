@@ -19,8 +19,8 @@ public class SumMatrix extends Task<int[]> {
 
 		for (int j1 = 0; j1 < 150; j1++) {
 
-			WorkStealingThreadPool pool = new WorkStealingThreadPool(3);
-			int[][] array = new int[1000][100];
+			WorkStealingThreadPool pool = new WorkStealingThreadPool(6);
+			int[][] array = new int[10000][10];
 
 			Random r = new Random();
 			for (int i = 0; i < array.length; i++) {
