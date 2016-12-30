@@ -47,7 +47,9 @@ public abstract class Task<R> {
 			this.isStarted = true;
 			start();
 		} else {
-			this.resolvedCallback.run();
+			if (this.resolvedCallback != null) {
+				this.resolvedCallback.run();
+			}
 		}
 	}
 
@@ -97,23 +99,27 @@ public abstract class Task<R> {
 
 		this.resolvedCallback = callback;
 
-		// In case whenResolved is called more than once
-		AtomicInteger count = new AtomicInteger(tasks.size());
+		if (tasks == null | tasks.size() == 0) {
+			spawn(this);
+		} else {
+			// In case whenResolved is called more than once
+			AtomicInteger count = new AtomicInteger(tasks.size());
 
-		for (Task<?> task : tasks) {
-			task.getResult().whenResolved(
-					/**
-					 * Decreases the results counter by one. When counter is 0,
-					 * it means that all sub-tasks finished and it is time to
-					 * return the task to the processor
-					 */
-					() -> {
+			for (Task<?> task : tasks) {
+				task.getResult().whenResolved(
+						/**
+						 * Decreases the results counter by one. When counter is
+						 * 0, it means that all sub-tasks finished and it is
+						 * time to return the task to the processor
+						 */
+						() -> {
 
-						count.decrementAndGet();
-						if (count.get() == 0) {
-							spawn(this);
-						}
-					});
+							count.decrementAndGet();
+							if (count.get() == 0) {
+								spawn(this);
+							}
+						});
+			}
 		}
 	}
 
