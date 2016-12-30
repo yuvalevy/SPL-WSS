@@ -1,5 +1,7 @@
 package bgu.spl.a2;
 
+import java.util.logging.Handler;
+
 /**
  * this class represents a single work stealing processor, it is
  * {@link Runnable} so it is suitable to be executed by threads.
@@ -16,7 +18,6 @@ public class Processor implements Runnable {
 	private final WorkStealingThreadPool pool;
 	private final int id;
 	private final int nprocessors;
-	private int victimId;
 	private VersionMonitor monitor;
 
 	/**
@@ -40,7 +41,6 @@ public class Processor implements Runnable {
 		this.id = id;
 		this.pool = pool;
 		this.nprocessors = pool.getNthreads();
-		this.victimId = (id + 1) % this.nprocessors;
 		this.monitor = this.pool.getMonitor();
 
 	}
@@ -86,8 +86,15 @@ public class Processor implements Runnable {
 	 */
 	private void steal(int version) {
 
-		if (!this.pool.steal(this.id, this.victimId)) {
+		int victim = (this.id + 1) % this.nprocessors;
+		boolean hasVictim = false;
 
+		while (victim != this.id | !hasVictim) {
+			hasVictim = this.pool.steal(this.id, victim);
+			victim = (victim + 1) % this.nprocessors;
+		}
+
+		if (!hasVictim) {
 			try {
 
 				this.monitor.await(version);
@@ -96,12 +103,7 @@ public class Processor implements Runnable {
 
 				Thread.currentThread().interrupt();
 			}
-		}
 
-		this.victimId = (this.victimId + 1) % this.nprocessors;
-
-		if (this.victimId == this.id) {
-			this.victimId = (this.victimId + 1) % this.nprocessors;
 		}
 	}
 }
