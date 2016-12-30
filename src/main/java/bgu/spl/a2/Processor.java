@@ -1,7 +1,5 @@
 package bgu.spl.a2;
 
-import java.util.logging.Handler;
-
 /**
  * this class represents a single work stealing processor, it is
  * {@link Runnable} so it is suitable to be executed by threads.
