@@ -5,10 +5,17 @@
  */
 package bgu.spl.a2.sim;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 
 import com.google.gson.stream.JsonReader;
 
@@ -25,7 +32,16 @@ import bgu.spl.a2.sim.tools.Tool;
 public class Simulator {
 
 	private static WorkStealingThreadPool pool;
-	private static Warehouse warehouse;
+	private static Warehouse warehouse = new Warehouse();
+
+	private static ArrayList<ArrayList<ManufactoringTask>> waves = new ArrayList<ArrayList<ManufactoringTask>>();
+	private static ArrayList<CountDownLatch> latches = new ArrayList<CountDownLatch>();
+
+	public Simulator(WorkStealingThreadPool pool) {
+
+		Simulator.attachWorkStealingThreadPool(pool);
+
+	}
 
 	/**
 	 * attach a WorkStealingThreadPool to the Simulator, this
@@ -37,15 +53,39 @@ public class Simulator {
 	 */
 	public static void attachWorkStealingThreadPool(WorkStealingThreadPool myWorkStealingThreadPool) {
 
+		pool = myWorkStealingThreadPool;
 	}
 
 	public static void main(String[] args) {
+		args = new String[1];
+		args[0] = "c:\\Temp\\simulation[2].json";
 
-		// Gson gson = new Gson();
+		int threads = parseJson(args[0]);
 
-		warehouse = new Warehouse();
-		parseJson();
+		WorkStealingThreadPool pool = new WorkStealingThreadPool(threads);
+		Simulator.attachWorkStealingThreadPool(pool);
+		ConcurrentLinkedQueue<Product> queue = Simulator.start();
 
+		try {
+			pool.shutdown();
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
+
+		// printToFile(queue);
+
+		try {
+			FileOutputStream fout = new FileOutputStream("result.ser");
+			ObjectOutputStream oos = new ObjectOutputStream(fout);
+			oos.writeObject(queue);
+			oos.close();
+			fout.close();
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -53,11 +93,39 @@ public class Simulator {
 	 * attachWorkStealingThreadPool()
 	 */
 	public static ConcurrentLinkedQueue<Product> start() {
-		// TODO flag - is attachWorkStealingThreadPool() called
-		return null;
+
+		ConcurrentLinkedQueue<Product> mainProducts = new ConcurrentLinkedQueue<Product>();
+
+		if (pool == null) {
+			return null;
+		}
+
+		pool.start();
+
+		for (int i = 0; i < waves.size(); i++) {
+
+			for (ManufactoringTask task : waves.get(i)) {
+
+				pool.submit(task);
+			}
+
+			try {
+				latches.get(i).await();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			for (ManufactoringTask task : waves.get(i)) {
+
+				mainProducts.add(task.getResult().get());
+			}
+
+		}
+		return mainProducts;
 	}
 
-	private static void createManufactoringTask(JsonReader jsonReader) throws IOException {
+	private static void createManufactoringTask(ArrayList<ManufactoringTask> list, JsonReader jsonReader)
+			throws IOException {
 
 		jsonReader.beginObject();
 
@@ -78,8 +146,10 @@ public class Simulator {
 			}
 		}
 
-		ManufactoringTask task = new ManufactoringTask(startId, product, warehouse);
-		// TODO: add to list including count
+		for (int i = 0; i < qty; i++) {
+			list.add(new ManufactoringTask(startId + i, product, warehouse));
+		}
+
 		jsonReader.endObject();
 	}
 
@@ -126,12 +196,6 @@ public class Simulator {
 
 		jsonReader.endArray();
 
-	}
-
-	private static void createPool(JsonReader jsonReader) throws IOException {
-
-		int num = jsonReader.nextInt();
-		pool = new WorkStealingThreadPool(num);
 	}
 
 	private static String[] createStringArray(JsonReader jsonReader) throws IOException {
@@ -200,12 +264,12 @@ public class Simulator {
 		jsonReader.endArray();
 	}
 
-	private static void createWave(JsonReader jsonReader) throws IOException {
+	private static void createWave(ArrayList<ManufactoringTask> list, JsonReader jsonReader) throws IOException {
 
 		jsonReader.beginArray();
 
 		while (jsonReader.hasNext()) {
-			createManufactoringTask(jsonReader);
+			createManufactoringTask(list, jsonReader);
 		}
 
 		jsonReader.endArray();
@@ -216,27 +280,38 @@ public class Simulator {
 		jsonReader.beginArray();
 
 		while (jsonReader.hasNext()) {
-			createWave(jsonReader);
+
+			ArrayList<ManufactoringTask> list = new ArrayList<ManufactoringTask>();
+			createWave(list, jsonReader);
+
+			CountDownLatch latch = new CountDownLatch(list.size());
+
+			whenResolve(latch, list);
+
+			waves.add(list);
+			latches.add(latch);
 		}
 
 		jsonReader.endArray();
 
 	}
 
-	private static void parseJson() {
+	private static int parseJson(String jsonParse) {
 
-		try {
+		int threads = 0;
 
-			JsonReader jsonReader = new JsonReader(new FileReader("c:\\Temp\\simulation[2].json"));
+		try (JsonReader jsonReader = new JsonReader(new FileReader(jsonParse))) {
 
 			jsonReader.beginObject();
 
 			while (jsonReader.hasNext()) {
 
 				String name = jsonReader.nextName();
+
 				if (name.equals("threads")) {
 
-					createPool(jsonReader);
+					threads = jsonReader.nextInt();
+
 				} else if (name.equals("tools")) {
 
 					createTools(jsonReader);
@@ -253,11 +328,71 @@ public class Simulator {
 			}
 
 			jsonReader.endObject();
-			jsonReader.close();
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return threads;
+	}
+
+	private static void printToFile(ConcurrentLinkedQueue<Product> queue) {
+
+		BufferedWriter bw = null;
+		FileWriter fw = null;
+
+		try {
+
+			File file = new File("res.txt");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			// true = append file
+			fw = new FileWriter(file.getAbsoluteFile(), true);
+			bw = new BufferedWriter(fw);
+
+			for (Product product : queue) {
+				bw.write(product.toString());
+			}
+
+			System.out.println("Done");
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		} finally {
+
+			try {
+
+				if (bw != null) {
+					bw.close();
+				}
+
+				if (fw != null) {
+					fw.close();
+				}
+
+			} catch (IOException ex) {
+
+				ex.printStackTrace();
+
+			}
+		}
+
+	}
+
+	private static void whenResolve(CountDownLatch latch, ArrayList<ManufactoringTask> list) {
+
+		for (ManufactoringTask task : list) {
+			task.getResult().whenResolved(() -> {
+
+				latch.countDown();
+
+			});
+		}
+
 	}
 }
