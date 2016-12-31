@@ -5,12 +5,9 @@
  */
 package bgu.spl.a2.sim;
 
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
@@ -57,8 +54,6 @@ public class Simulator {
 	}
 
 	public static void main(String[] args) {
-		args = new String[1];
-		args[0] = "c:\\Temp\\simulation[2].json";
 
 		int threads = parseJson(args[0]);
 
@@ -71,8 +66,6 @@ public class Simulator {
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
-
-		// printToFile(queue);
 
 		try {
 			FileOutputStream fout = new FileOutputStream("result.ser");
@@ -333,55 +326,6 @@ public class Simulator {
 			e.printStackTrace();
 		}
 		return threads;
-	}
-
-	private static void printToFile(ConcurrentLinkedQueue<Product> queue) {
-
-		BufferedWriter bw = null;
-		FileWriter fw = null;
-
-		try {
-
-			File file = new File("res.txt");
-
-			// if file doesnt exists, then create it
-			if (!file.exists()) {
-				file.createNewFile();
-			}
-
-			// true = append file
-			fw = new FileWriter(file.getAbsoluteFile(), true);
-			bw = new BufferedWriter(fw);
-
-			for (Product product : queue) {
-				bw.write(product.toString());
-			}
-
-			System.out.println("Done");
-
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		} finally {
-
-			try {
-
-				if (bw != null) {
-					bw.close();
-				}
-
-				if (fw != null) {
-					fw.close();
-				}
-
-			} catch (IOException ex) {
-
-				ex.printStackTrace();
-
-			}
-		}
-
 	}
 
 	private static void whenResolve(CountDownLatch latch, ArrayList<ManufactoringTask> list) {
