@@ -1,12 +1,13 @@
 package bgu.spl.a2.sim;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * A class that represents a product produced during the simulation.
  */
-public class Product {
+public class Product implements Serializable {
 
 	private long finalId;
 	List<Product> products;
@@ -44,17 +45,7 @@ public class Product {
 	 *         received as the sum of all UseOn();
 	 */
 	public long getFinalId() {
-		return finalId;
-	}
-
-	/**
-	 * Sets the final id
-	 * 
-	 * @param id
-	 *            the new id
-	 */
-	public void setFinalId(long id) {
-		this.finalId = id;
+		return this.finalId;
 	}
 
 	/**
@@ -78,4 +69,24 @@ public class Product {
 		return this.startId;
 	}
 
+	/**
+	 * Sets the final id
+	 *
+	 * @param id
+	 *            the new id
+	 */
+	public void setFinalId(long id) {
+		this.finalId = id;
+	}
+
+	@Override
+	public String toString() {
+		String s = "ProductName: " + this.name + "  Product Id = " + this.finalId + "\n";
+		s += "PartsList {\n";
+		for (Product part : this.products) {
+			s += part.toString();
+		}
+		s += "}\n";
+		return s;
+	}
 }
