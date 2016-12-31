@@ -12,7 +12,7 @@ import bgu.spl.a2.sim.tools.Tool;
 
 class ManufactoringTask extends Task<Product> {
 
-	private String sproduct;
+	private String sProduct;
 	private Warehouse warehouse;
 	private long startId;
 	private AtomicLong newId;
@@ -23,7 +23,7 @@ class ManufactoringTask extends Task<Product> {
 
 	public ManufactoringTask(long startId, String product, Warehouse warehouse) {
 		this.warehouse = warehouse;
-		this.sproduct = product;
+		this.sProduct = product;
 		this.startId = startId;
 		this.newId = new AtomicLong(0);
 	}
@@ -31,7 +31,7 @@ class ManufactoringTask extends Task<Product> {
 	@Override
 	protected void start() {
 
-		ManufactoringPlan plan = warehouse.getPlan(sproduct);
+		ManufactoringPlan plan = warehouse.getPlan(sProduct);
 		String[] parts = plan.getParts();
 
 		List<ManufactoringTask> tasks = new ArrayList<ManufactoringTask>();
@@ -45,7 +45,7 @@ class ManufactoringTask extends Task<Product> {
 		// When all parts are manufactured, this callback is called
 		whenResolved(tasks, () -> {
 
-			Product product = new Product(startId, sproduct);
+			Product product = new Product(startId, sProduct);
 
 			for (ManufactoringTask task : tasks) {
 
